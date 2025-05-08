@@ -40,9 +40,7 @@ type ZSet struct {
 }
 
 // 初始化随机数生成器
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // createNode 创建一个新的跳跃表节点。
 // level: 节点的层级。
@@ -88,7 +86,7 @@ func NewZSet() *ZSet {
 // 返回生成的层级。
 func randomLevel() int {
 	level := 1
-	for rand.Float64() < SKIPLIST_P && level < SKIPLIST_MAXLEVEL {
+	for rng.Float64() < SKIPLIST_P && level < SKIPLIST_MAXLEVEL {
 		level++
 	}
 	return level
