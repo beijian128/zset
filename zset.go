@@ -32,7 +32,6 @@ type skiplist struct {
 	level  int           // 当前最大层级
 }
 
-// zset 结构
 type ZSet struct {
 	dict map[string]float64 // 哈希表，映射元素到分数
 	zsl  *skiplist          // 跳跃表，按分数排序元素
@@ -69,7 +68,7 @@ func createSkiplist() *skiplist {
 	return sl
 }
 
-// 创建新的 ZSet
+// NewZSet 创建新的 ZSet
 func NewZSet() *ZSet {
 	return &ZSet{
 		dict: make(map[string]float64),
@@ -157,7 +156,7 @@ func (sl *skiplist) insert(score float64, ele string) *skiplistNode {
 	return x
 }
 
-// 向 ZSet 中添加元素
+// Add 向 ZSet 中添加元素
 func (z *ZSet) Add(ele string, score float64) bool {
 	// 检查元素是否已存在
 	oldScore, exists := z.dict[ele]
@@ -236,7 +235,7 @@ func (sl *skiplist) deleteNode(x *skiplistNode, update []*skiplistNode) {
 	sl.length--
 }
 
-// 从 ZSet 中删除元素
+// Remove 从 ZSet 中删除元素
 func (z *ZSet) Remove(ele string) bool {
 	// 检查元素是否存在
 	score, exists := z.dict[ele]
@@ -253,13 +252,13 @@ func (z *ZSet) Remove(ele string) bool {
 	return true
 }
 
-// 获取元素的分数
+// Score 获取元素的分数
 func (z *ZSet) Score(ele string) (float64, bool) {
 	score, exists := z.dict[ele]
 	return score, exists
 }
 
-// 获取元素的排名（从0开始）
+// Rank 获取元素的排名（从0开始）
 func (z *ZSet) Rank(ele string, reverse bool) int64 {
 	score, exists := z.dict[ele]
 	if !exists {
@@ -280,7 +279,7 @@ func (z *ZSet) Rank(ele string, reverse bool) int64 {
 	return int64(rank)
 }
 
-// 获取指定排名的元素
+// GetByRank 获取指定排名的元素
 func (z *ZSet) GetByRank(rank int64, reverse bool) (string, float64, bool) {
 	if rank < 0 || rank >= int64(z.zsl.length) {
 		return "", 0, false
@@ -341,7 +340,7 @@ func (sl *skiplist) getRank(score float64, ele string) uint64 {
 	return 0
 }
 
-// 按分数范围获取元素
+// RangeByScore 按分数范围获取元素
 func (z *ZSet) RangeByScore(min, max float64, offset, count int64) []struct {
 	Member string
 	Score  float64
@@ -399,7 +398,7 @@ func (z *ZSet) RangeByScore(min, max float64, offset, count int64) []struct {
 	return result
 }
 
-// 获取 ZSet 中元素的数量
+// Len 获取 ZSet 中元素的数量
 func (z *ZSet) Len() uint64 {
 	return z.zsl.length
 }
