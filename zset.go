@@ -5,10 +5,11 @@ import (
 	"time"
 )
 
-const (
-	SKIPLIST_MAXLEVEL = 32   // 跳跃表最大层数
-	SKIPLIST_P        = 0.25 // 层级概率
-)
+// SKIPLIST_MAXLEVEL 定义跳跃表的最大层数。
+const SKIPLIST_MAXLEVEL = 32
+
+// SKIPLIST_P 定义跳跃表节点增加层级的概率。
+const SKIPLIST_P = 0.25
 
 // 跳跃表节点
 type skiplistNode struct {
@@ -32,6 +33,7 @@ type skiplist struct {
 	level  int           // 当前最大层级
 }
 
+// ZSet 有序集合，结合哈希表和跳跃表实现。
 type ZSet struct {
 	dict map[string]float64 // 哈希表，映射元素到分数
 	zsl  *skiplist          // 跳跃表，按分数排序元素
@@ -42,7 +44,11 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// 创建新的跳跃表节点
+// createNode 创建一个新的跳跃表节点。
+// level: 节点的层级。
+// score: 节点的分数。
+// ele: 节点的元素值。
+// 返回新创建的跳跃表节点指针。
 func createNode(level int, score float64, ele string) *skiplistNode {
 	node := &skiplistNode{
 		ele:   ele,
@@ -52,7 +58,8 @@ func createNode(level int, score float64, ele string) *skiplistNode {
 	return node
 }
 
-// 创建新的跳跃表
+// createSkiplist 创建一个新的跳跃表。
+// 返回新创建的跳跃表指针。
 func createSkiplist() *skiplist {
 	sl := &skiplist{
 		level:  1,
@@ -68,7 +75,8 @@ func createSkiplist() *skiplist {
 	return sl
 }
 
-// NewZSet 创建新的 ZSet
+// NewZSet 创建一个新的有序集合 ZSet。
+// 返回新创建的 ZSet 指针。
 func NewZSet() *ZSet {
 	return &ZSet{
 		dict: make(map[string]float64),
@@ -76,7 +84,8 @@ func NewZSet() *ZSet {
 	}
 }
 
-// 随机生成层级
+// randomLevel 随机生成一个跳跃表节点的层级。
+// 返回生成的层级。
 func randomLevel() int {
 	level := 1
 	for rand.Float64() < SKIPLIST_P && level < SKIPLIST_MAXLEVEL {
@@ -85,7 +94,10 @@ func randomLevel() int {
 	return level
 }
 
-// 向跳跃表中插入元素
+// insert 向跳跃表中插入一个新节点。
+// score: 节点的分数。
+// ele: 节点的元素值。
+// 返回新插入的节点指针。
 func (sl *skiplist) insert(score float64, ele string) *skiplistNode {
 	update := make([]*skiplistNode, SKIPLIST_MAXLEVEL)
 	rank := make([]uint64, SKIPLIST_MAXLEVEL)
@@ -156,7 +168,10 @@ func (sl *skiplist) insert(score float64, ele string) *skiplistNode {
 	return x
 }
 
-// Add 向 ZSet 中添加元素
+// Add 向 ZSet 中添加或更新元素。
+// ele: 要添加的元素。
+// score: 元素的分数。
+// 如果元素是新添加的，返回 true；如果元素已存在且分数被更新，返回 false。
 func (z *ZSet) Add(ele string, score float64) bool {
 	// 检查元素是否已存在
 	oldScore, exists := z.dict[ele]
@@ -181,7 +196,10 @@ func (z *ZSet) Add(ele string, score float64) bool {
 	return !exists
 }
 
-// 从跳跃表中删除元素
+// delete 从跳跃表中删除指定分数和元素的节点。
+// score: 节点的分数。
+// ele: 节点的元素值。
+// 如果成功删除，返回 true；否则返回 false。
 func (sl *skiplist) delete(score float64, ele string) bool {
 	update := make([]*skiplistNode, SKIPLIST_MAXLEVEL)
 
@@ -208,7 +226,9 @@ func (sl *skiplist) delete(score float64, ele string) bool {
 	return false
 }
 
-// 删除跳跃表中的节点
+// deleteNode 删除跳跃表中的指定节点。
+// x: 要删除的节点。
+// update: 记录需要更新的节点。
 func (sl *skiplist) deleteNode(x *skiplistNode, update []*skiplistNode) {
 	// 更新前向指针和跨度
 	for i := 0; i < sl.level; i++ {
@@ -235,7 +255,9 @@ func (sl *skiplist) deleteNode(x *skiplistNode, update []*skiplistNode) {
 	sl.length--
 }
 
-// Remove 从 ZSet 中删除元素
+// Remove 从 ZSet 中删除指定元素。
+// ele: 要删除的元素。
+// 如果元素存在并成功删除，返回 true；否则返回 false。
 func (z *ZSet) Remove(ele string) bool {
 	// 检查元素是否存在
 	score, exists := z.dict[ele]
@@ -252,13 +274,18 @@ func (z *ZSet) Remove(ele string) bool {
 	return true
 }
 
-// Score 获取元素的分数
+// Score 获取 ZSet 中指定元素的分数。
+// ele: 要获取分数的元素。
+// 返回元素的分数和元素是否存在的标志。
 func (z *ZSet) Score(ele string) (float64, bool) {
 	score, exists := z.dict[ele]
 	return score, exists
 }
 
-// Rank 获取元素的排名（从0开始）
+// Rank 获取 ZSet 中指定元素的排名。
+// ele: 要获取排名的元素。
+// reverse: 是否按降序排名。
+// 返回元素的排名（从 0 开始），如果元素不存在返回 -1。
 func (z *ZSet) Rank(ele string, reverse bool) int64 {
 	score, exists := z.dict[ele]
 	if !exists {
@@ -270,7 +297,7 @@ func (z *ZSet) Rank(ele string, reverse bool) int64 {
 		return -1
 	}
 
-	// 排名从0开始
+	// 排名从 0 开始
 	rank--
 
 	if reverse {
@@ -279,7 +306,10 @@ func (z *ZSet) Rank(ele string, reverse bool) int64 {
 	return int64(rank)
 }
 
-// GetByRank 获取指定排名的元素
+// GetByRank 获取 ZSet 中指定排名的元素。
+// rank: 要获取的排名（从 0 开始）。
+// reverse: 是否按降序排名。
+// 返回元素、元素的分数和元素是否存在的标志。
 func (z *ZSet) GetByRank(rank int64, reverse bool) (string, float64, bool) {
 	if rank < 0 || rank >= int64(z.zsl.length) {
 		return "", 0, false
@@ -297,7 +327,9 @@ func (z *ZSet) GetByRank(rank int64, reverse bool) (string, float64, bool) {
 	return n.ele, n.score, true
 }
 
-// 获取跳跃表中指定排名的节点
+// getElementByRank 获取跳跃表中指定排名的节点。
+// rank: 要获取的排名（从 1 开始）。
+// 返回指定排名的节点指针，如果排名无效返回 nil。
 func (sl *skiplist) getElementByRank(rank uint64) *skiplistNode {
 	if rank == 0 || rank > sl.length {
 		return nil
@@ -319,7 +351,10 @@ func (sl *skiplist) getElementByRank(rank uint64) *skiplistNode {
 	return nil
 }
 
-// 获取元素在跳跃表中的排名
+// getRank 获取元素在跳跃表中的排名。
+// score: 元素的分数。
+// ele: 元素的值。
+// 返回元素的排名（从 1 开始），如果元素不存在返回 0。
 func (sl *skiplist) getRank(score float64, ele string) uint64 {
 	var rank uint64 = 0
 	x := sl.header
@@ -340,7 +375,12 @@ func (sl *skiplist) getRank(score float64, ele string) uint64 {
 	return 0
 }
 
-// RangeByScore 按分数范围获取元素
+// RangeByScore 按分数范围获取 ZSet 中的元素。
+// min: 分数范围的最小值。
+// max: 分数范围的最大值。
+// offset: 跳过的元素数量。
+// count: 要获取的元素数量，-1 表示获取所有符合条件的元素。
+// 返回符合条件的元素列表。
 func (z *ZSet) RangeByScore(min, max float64, offset, count int64) []struct {
 	Member string
 	Score  float64
@@ -398,7 +438,8 @@ func (z *ZSet) RangeByScore(min, max float64, offset, count int64) []struct {
 	return result
 }
 
-// Len 获取 ZSet 中元素的数量
+// Len 获取 ZSet 中元素的数量。
+// 返回 ZSet 中元素的数量。
 func (z *ZSet) Len() uint64 {
 	return z.zsl.length
 }
